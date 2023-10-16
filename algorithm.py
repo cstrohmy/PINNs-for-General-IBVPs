@@ -7,9 +7,16 @@ import numpy as np
 from domain import InteriorPiece, BoundaryPiece
 
 
+"""
+It is here that the model is actually trained. 
+
+"""
+
+
 class LearningAlgorithm:
     def __init__(self, ibvp: IBVP, loss_weights=None, sample_sizes=None, sampling_distributions=None,
                  epochs=100, learning_rate=1e-2, optimizer=Adam()):
+
         self.ibvp = ibvp
 
         if loss_weights is None:
@@ -81,8 +88,6 @@ class LearningAlgorithm:
 
             # Display learning info
             print(f'Epoch: {epoch + 1}/{self.epochs}, Loss: {loss}')
-
-
 
     @property
     def piece_names(self):

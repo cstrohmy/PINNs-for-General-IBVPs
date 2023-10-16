@@ -7,6 +7,14 @@ import numpy as np
 from numpy import cos, sin, pi
 
 
+"""
+
+Demonstration of training a neural network to solve the dirichlet problem on the disc:
+u_xx + u_yy = 0 on disc
+u = f on boundary of disc
+
+"""
+
 pieces = {
     'interior': InteriorPiece(
         variables=['x', 'y'],

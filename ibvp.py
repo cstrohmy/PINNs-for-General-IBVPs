@@ -7,7 +7,13 @@ from collections import OrderedDict
 import tensorflow as tf
 
 
-
+"""
+The IBVP class is in some sense the "computational core" of the project. The main computation that needs to be performed
+is to evaluate a given pde on a given domain piece, where the "aspiring" solution is a neural network. Once we are
+able to evaluate the pde and are careful to ensure that the result is still recognized by tensorflow as a differentiable
+function of the model parameters, it is easy to construct a loss function which enforces that the pde be satisfied by
+the network. This task is taken up in algorithm.py
+"""
 
 
 def is_numeric(s):
@@ -36,28 +42,37 @@ def extract_terms(expression):
     return list(terms.keys())
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class IBVP:
+    """
+    The IBVP class contains all of the information needed to specify an initial boundary value problem.
+    """
     def __init__(self, domain: Domain, pdes: dict, fill_ins: dict, dependent_variables: list):
+        """
+        Collects the domain, any terms needed to be "filled in", and names of dependent variables
+        :param domain: Domain instance, essentially a dictionary of domain pieces
+        :param pdes: dictionary where the keys are the names of domain pieces, the values are dictionaries such that
+        the keys are names for the partial differential equation, the values are the actual equation
+        :param fill_ins: dictionary where keys are the names of the domain pieces, values are dictionaries such that
+        the keys are names of any term needed to be filled in (e.g. variable coefficients, forcing terms), and the
+        values are the actual callables
+        :param dependent_variables: list of strings of the dependent variables (note independent variables are
+        identical to the variables attribute of self.domain
+        """
         self.domain = domain
         self.pdes = pdes
         self.fill_ins = fill_ins
         self.dependent_variables = dependent_variables
 
-
-    def evaluate(self, piece_name: str, pde_name: str, sample: Union[Tensor, tuple], model: Model, tape:tf.GradientTape): # independent variables and dependent variables also needed, but these are class attributes
+    def evaluate(self, piece_name: str, pde_name: str, sample: Union[Tensor, tuple], model: Model, tape:tf.GradientTape):
+        """
+        The basic computation needed is to evaluate the PDE/PDE systems on all of the domain pieces, on a given sample
+        :param piece_name: name of a domain piece
+        :param pde_name: name of a pde defined on the domain piece, which we will be evaluating
+        :param sample: tensor or tuple of data points
+        :param model: neural network which will be trained to solve the pde
+        :param tape: a gradient tape used to update the model parameters
+        :return:
+        """
 
         # Access partial differential equation to evaluate
         pde = self.pdes[piece_name][pde_name]
@@ -118,7 +133,6 @@ class IBVP:
         exec(f'result = {pde}', local_namespace)
         return local_namespace.get('result')
 
-
     def sample(self, piece_name, num_samples, sampling_distribution=None):
         return self.domain.sample(piece_name, num_samples, sampling_distribution)
 
@@ -131,112 +145,11 @@ class IBVP:
         return self.domain.variables
 
 
-
-
-
 def lines_to_string(lines: list):
     string = ''
     for line in lines:
         string += line
     return string
-
-
-
-
-
-'''
-
-
-
-
-
-from domain import Domain, InteriorPiece, BoundaryPiece
-import tensorflow as tf
-import numpy as np
-from keras.models import Model
-from keras.layers import Input, Dense
-from numpy import sin, cos, pi
-
-
-
-
-
-
-
-
-
-pieces = {
-    'interior': InteriorPiece(
-        variables=['x', 'y'],
-        inequalities=[
-            'x ** 2 + y ** 2 - 1'
-        ],
-        bounding_box=[(-1, 1), (-1, 1)],
-    ),
-    'boundary': BoundaryPiece(
-        variables=['x', 'y'],
-        parameters=['theta'],
-        parameter_inequalities=[
-            '-theta',
-            'theta - 2 * pi'
-        ],
-        bounding_box=[(0, 2 * pi)],
-        parametrization=[
-            'cos(theta)',
-            'sin(theta)'
-        ],
-    )
-}
-
-domain = Domain(pieces)
-
-
-
-pdes = {
-    'interior': {
-        'laplacian': 'u_xx + u_yy'
-    },
-    'boundary': {
-        'boundary': 'u - f'
-    }
-}
-
-fill_ins = {'f': lambda sample: sample[:, 0] ** 2 + sample[:, 1]}
-
-ibvp = IBVP(domain=domain, pdes=pdes, fill_ins=fill_ins, dependent_variables=['u'])
-
-
-
-piece_name = 'interior'
-pde_name = 'laplacian'
-sample = domain.sample(piece_name, 10)
-
-inputs = Input(shape=(2,))
-latent = Dense(256, activation='tanh')(inputs)
-latent = Dense(128, activation='tanh')(latent)
-outputs = Dense(1)(latent)
-model = Model(inputs, outputs)
-
-val = ibvp.evaluate(piece_name, pde_name, sample, model)
-
-
-'''
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

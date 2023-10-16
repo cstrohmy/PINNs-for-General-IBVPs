@@ -4,6 +4,16 @@ from numpy import cos, sin, pi
 import tensorflow as tf
 
 
+"""
+Each initial boundary-value problem must be defined on a domain. The Domain object consists of DomainPiece instances, 
+where each DomainPiece is either an InteriorPiece or a BoundnaryPiece. In this way, one may construct very general 
+domains.
+
+A PDE or system of PDEs will be associated with each domain piece, where the neural network will be "penalized" for not 
+satisfying the PDE/system on said domain piece.
+"""
+
+
 class DomainPiece(ABC):
     @abstractmethod
     def sample(self, num_samples, sampling_distribution):
@@ -12,6 +22,12 @@ class DomainPiece(ABC):
 
 class InteriorPiece(DomainPiece):
     def __init__(self, variables: list, inequalities: list, bounding_box: list):
+        """
+        An interior piece of the domain, e.g. a disc, square, tube,...
+        :param variables: list of strings which name the variables of the domain
+        :param inequalities: list of strings built from the variables, which will carve out interior piece
+        :param bounding_box: list of tuples which bound the possible values of each variable
+        """
         self.variables = variables
         self.inequalities = inequalities
         self.bounding_box = bounding_box
@@ -54,6 +70,14 @@ class InteriorPiece(DomainPiece):
 
 class BoundaryPiece(DomainPiece):
     def __init__(self, variables, parameters, parameter_inequalities, bounding_box, parametrization):
+        """
+        Boundary pieces of the domain, e.g. circle is boundary of disc
+        :param variables: list of strings which name the variables of the domain
+        :param parameters: list of strings which name the parameters used in parametrization of boundary piece
+        :param parameter_inequalities: list of strings which specify the inequalities constraining parameter values
+        :param bounding_box: list of tuples which bound the possible values of each variable
+        :param parametrization: list of strings, each of which corresponds to a component of the parametrization
+        """
         self.variables = variables
         self.parameters = parameters
         self.parameter_inequalities = parameter_inequalities
@@ -98,20 +122,14 @@ class BoundaryPiece(DomainPiece):
         return samples
 
 
-
 class PeriodicPiece(DomainPiece):
     pass
-
-
-
-
-
 
 
 class Domain:
     def __init__(self, pieces: dict):
         self.pieces = pieces
-        self.variables = list(self.pieces.values())[0].variables        # hmm should refactor, make it so that variables are same for all pieces, is necessary for PDE applications
+        self.variables = list(self.pieces.values())[0].variables
 
     def sample(self, piece_name, num_samples, sampling_distribution=None):
         piece = self.pieces[piece_name]
@@ -129,58 +147,46 @@ class Domain:
         return list(self.pieces.keys())
 
 
-
-
-circle = BoundaryPiece(variables=['x', 'y'],
-                       parameters=['theta'],
-                       parameter_inequalities=['-theta', 'theta - 2 * pi'],
-                       bounding_box=[(0, 2 * pi)],
-                       parametrization=['cos(theta)', 'sin(theta)'])
-
-
-
-
-
-
 class Disc(Domain):
     pass
+
 
 class Ball(Domain):
     pass
 
+
 class Cylinder(Domain):
     pass
+
 
 class Cone(Domain):
     pass
 
-
 class Interval(Domain):
     pass
+
 
 class Square(Domain):
     pass
 
+
 class Cube(Domain):
     pass
-
 
 class Torus1d(Domain):
     pass
 
+
 class Torus2d(Domain):
     pass
+
 
 class Torus3d(Domain):
     pass
 
 
-
 class ConvexPolygon(Domain):
     pass
-
-
-
 
 
 class CompositeDomain(Domain):
